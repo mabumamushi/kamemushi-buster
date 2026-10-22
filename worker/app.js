@@ -1,0 +1,118 @@
+(function(){
+  const $ = (s) => document.querySelector(s);
+  const panels = ['intro','game','result','ranking','admin'];
+  const bugMarkup = $('.hero-bug .bug').outerHTML;
+  const state = {name:'',words:[],seen:[],current:null,kills:0,runId:null,active:false,pending:false,deadline:0,tick:null,returnPanel:'intro',sound:true};
+  function show(id){panels.forEach(p => $('#'+p).classList.toggle('active',p===id));window.scrollTo(0,0)}
+  function toast(message,bad){const el=$('#feedback');el.textContent=message;el.classList.toggle('bad',!!bad);clearTimeout(el._t);el._t=setTimeout(()=>el.textContent='',700)}
+  function play(freq,duration,type){if(!state.sound)return;try{const C=window.AudioContext||window.webkitAudioContext;const c=play.c||(play.c=new C());const o=c.createOscillator(),g=c.createGain();o.type=type||'sawtooth';o.frequency.setValueAtTime(freq,c.currentTime);o.frequency.exponentialRampToValueAtTime(Math.max(40,freq/3),c.currentTime+duration);g.gain.setValueAtTime(.055,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+duration);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+duration)}catch{}}
+  function bug(word){
+    const green=Math.random()<.2;
+    const el=$('#enemy');
+    el.className='enemy enter';
+    el.innerHTML=bugMarkup;
+    const shape=el.querySelector('.bug');
+    shape.classList.toggle('green',green);
+    shape.classList.toggle('brown',!green);
+    shape.querySelector('.bug-core span').textContent=word.japanese;
+    el.dataset.color=green?'#a4f36a':'#cda176';
+    state.current=word;
+    setTimeout(()=>el.classList.remove('enter'),850);
+  }
+  function nextWord(){
+    if(!state.active)return;
+    const pool=state.words.filter(w=>!state.seen.includes(w));
+    if(!pool.length)state.seen=[];
+    const available=pool.length?pool:state.words;
+    const word=available[Math.floor(Math.random()*available.length)];
+    state.seen.push(word);
+    bug(word);
+    $('#answerInput').value='';
+    $('#answerInput').focus();
+    state.pending=false;
+  }
+  function burst(){
+    const rect=$('#enemy').getBoundingClientRect(),arena=$('#arena').getBoundingClientRect(),box=$('#particles');
+    box.replaceChildren();
+    for(let i=0;i<52;i++){
+      const e=document.createElement('i');
+      e.className='particle';
+      const x=rect.left-arena.left+rect.width*(.18+Math.random()*.64),y=rect.top-arena.top+rect.height*(.16+Math.random()*.68);
+      e.style.left=x+'px';e.style.top=y+'px';e.style.setProperty('--s',(3+Math.random()*9)+'px');
+      e.style.setProperty('--c',Math.random()<.2?'#e8fbea':$('#enemy').dataset.color);
+      e.style.setProperty('--dx',((Math.random()-.5)*340)+'px');e.style.setProperty('--dy',((Math.random()-.5)*270)+'px');
+      e.style.setProperty('--rot',((Math.random()-.5)*800)+'deg');box.append(e);
+    }
+    setTimeout(()=>box.replaceChildren(),600);
+  }
+  function updateHud(){
+    $('#score').innerHTML=String(state.kills).padStart(2,'0')+'<span>匹</span>';
+    const left=Math.max(0,state.deadline-performance.now());
+    $('#timer').innerHTML=String(Math.ceil(left/1000)).padStart(2,'0')+'<span>s</span>';
+    $('#timeFill').style.width=(left/60000*100)+'%';
+    if(left<=0)finish();
+  }
+  async function begin(){
+    const name=$('#playerName').value.trim();
+    if(!name){$('#nameError').textContent='名前を入力してください';$('#playerName').focus();return}
+    $('#nameError').textContent='';
+    state.name=name;state.kills=0;state.seen=[];state.runId=null;state.active=false;state.pending=false;
+    $('#hudName').textContent=name;$('#score').innerHTML='00<span>匹</span>';$('#timer').innerHTML='60<span>s</span>';$('#timeFill').style.width='100%';
+    $('#enemy').innerHTML='';$('#answerInput').disabled=true;show('game');
+    let words;
+    try{const r=await fetch('/api/words');const data=await r.json();words=data.words}catch{}
+    if(!Array.isArray(words)||!words.length){toast('LOAD ERROR',true);setTimeout(()=>show('intro'),1300);return}
+    state.words=words;
+    for(const n of ['3','2','1','GO']){if(!$('#game').classList.contains('active'))return;$('#countdown').textContent=n;play(n==='GO'?900:400, .1,'sine');await new Promise(res=>setTimeout(res,n==='GO'?450:750))}
+    $('#countdown').textContent='';
+    try{const r=await fetch('/api/start',{method:'POST'});if(r.ok){const data=await r.json();state.runId=data.runId}}catch{}
+    state.active=true;$('#answerInput').disabled=false;state.deadline=performance.now()+60000;nextWord();state.tick=setInterval(updateHud,100);updateHud();
+  }
+  function finish(){
+    if(!state.active)return;
+    state.active=false;state.pending=false;clearInterval(state.tick);
+    $('#answerInput').disabled=true;$('#countdown').textContent='';
+    $('#finalScore').innerHTML=state.kills+'<span>匹</span>';$('#resultName').textContent=state.name;
+    $('#personalRank').textContent='スコアを保存中…';
+    $('#wordList').classList.add('hidden');show('result');play(580,.4,'triangle');
+    const payload={runId:state.runId,name:state.name,kills:state.kills};
+    fetch('/api/result',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)}).then(async r=>{const d=await r.json();if(!r.ok)throw Error(d.error||'保存できませんでした');$('#personalRank').textContent=d.rank?'GLOBAL RANK  #'+d.rank:'スコアを保存しました'}).catch(()=>{$('#personalRank').textContent='スコアを保存できませんでした'});
+  }
+  $('#answerForm').addEventListener('submit',e=>{
+    e.preventDefault();if(!state.active||state.pending||!state.current)return;
+    const answer=$('#answerInput').value.trim().toLowerCase().replace(/\s+/g,' ');
+    const expected=state.current.english.trim().toLowerCase().replace(/\s+/g,' ');
+    if(answer===expected){
+      state.pending=true;state.kills++;$('#score').innerHTML=String(state.kills).padStart(2,'0')+'<span>匹</span>';
+      burst();$('#enemy').classList.add('shatter');toast('TARGET ELIMINATED');play(780,.19);
+      setTimeout(nextWord,500);
+    }else{
+      $('#enemy').classList.remove('wrong');void $('#enemy').offsetWidth;$('#enemy').classList.add('wrong');
+      toast('MISS — TRY AGAIN',true);play(190,.22,'square');$('#answerInput').select();
+      setTimeout(()=>$('#enemy').classList.remove('wrong'),420);
+    }
+  });
+  $('#startBtn').addEventListener('click',begin);$('#playerName').addEventListener('keydown',e=>{if(e.key==='Enter')begin()});
+  $('#replayBtn').addEventListener('click',()=>{show('intro');$('#playerName').focus()});
+  $('#wordsBtn').addEventListener('click',()=>{
+    const wrap=$('#wordList');wrap.classList.toggle('hidden');const rows=$('#wordRows');rows.replaceChildren();
+    state.words.forEach(w=>{const row=document.createElement('div');row.className='word-row';const a=document.createElement('span'),b=document.createElement('span');a.textContent=w.japanese;b.textContent=w.english;row.append(a,b);rows.append(row)});
+  });
+  async function ranking(){
+    state.returnPanel=$('.panel.active')?.id||'intro';show('ranking');$('#rankingRows').textContent='読み込み中…';
+    try{const r=await fetch('/api/ranking');const data=await r.json();const wrap=$('#rankingRows');wrap.replaceChildren();
+      if(!data.scores.length){wrap.textContent='まだ記録がありません';return}
+      data.scores.forEach((s,i)=>{const row=document.createElement('div');row.className='rank-row';const n=document.createElement('span'),name=document.createElement('strong'),kills=document.createElement('span');n.className='num';n.textContent=String(i+1).padStart(2,'0');name.textContent=s.name;kills.className='kills';kills.textContent=s.kills+'匹';row.append(n,name,kills);wrap.append(row)});
+    }catch{$('#rankingRows').textContent='読み込めませんでした'}
+  }
+  $('#rankBtn').addEventListener('click',ranking);
+  $('#adminBtn').addEventListener('click',()=>{state.returnPanel=$('.panel.active')?.id||'intro';show('admin');$('#adminKey').value=sessionStorage.getItem('kb-admin-key')||''});
+  document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>show(state.returnPanel)));
+  $('#soundBtn').addEventListener('click',()=>{state.sound=!state.sound;$('#soundBtn').textContent=state.sound?'◖))':'◖';$('#soundBtn').setAttribute('aria-label',state.sound?'効果音をオフ':'効果音をオン')});
+  $('#importBtn').addEventListener('click',async()=>{
+    const file=$('#csvFile').files[0],key=$('#adminKey').value.trim(),status=$('#importStatus');
+    if(!key||!file){status.textContent='管理者キーと CSV ファイルを指定してください';return}
+    status.textContent='読み込み中…';sessionStorage.setItem('kb-admin-key',key);
+    try{const csv=await file.text();const r=await fetch('/api/import',{method:'POST',headers:{'content-type':'text/csv;charset=utf-8','x-admin-key':key},body:csv});const d=await r.json();if(!r.ok)throw Error(d.error||'読み込み失敗');status.textContent=d.count+' 語を登録しました'}catch(e){status.textContent=e.message}
+  });
+})();
