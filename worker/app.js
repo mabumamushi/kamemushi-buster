@@ -59,7 +59,7 @@
     setTimeout(()=>box.replaceChildren(),600);
   }
   function updateHud(){
-    $('#score').innerHTML=String(state.kills).padStart(2,'0')+'<span>匹</span>';
+    $('#score').innerHTML=state.kills+'<span>匹</span>';
     const left=Math.max(0,state.deadline-performance.now());
     $('#timer').innerHTML=String(Math.ceil(left/1000)).padStart(2,'0')+'<span>s</span>';
     $('#timeFill').style.width=(left/60000*100)+'%';
@@ -71,7 +71,7 @@
     $('#nameError').textContent='';
     state.name=name;state.kills=0;state.seen=[];state.runId=null;state.active=false;state.battleReady=false;state.pending=false;
     primeMusic();
-    $('#hudName').textContent=name;$('#score').innerHTML='00<span>匹</span>';$('#timer').innerHTML='60<span>s</span>';$('#timeFill').style.width='100%';
+    $('#hudName').textContent=name;$('#score').innerHTML='0<span>匹</span>';$('#timer').innerHTML='60<span>s</span>';$('#timeFill').style.width='100%';
     $('#enemy').innerHTML='';$('#answerInput').disabled=true;show('game');
     let words;
     try{const r=await fetch('/api/words');const data=await r.json();words=data.words}catch{}
@@ -103,7 +103,7 @@
     const answer=$('#answerInput').value.trim().toLowerCase().replace(/\s+/g,' ');
     const expected=state.current.english.trim().toLowerCase().replace(/\s+/g,' ');
     if(answer===expected){
-      state.pending=true;state.kills++;$('#score').innerHTML=String(state.kills).padStart(2,'0')+'<span>匹</span>';
+      state.pending=true;state.kills++;$('#score').innerHTML=state.kills+'<span>匹</span>';
       burst();$('#enemy').classList.add('shatter');toast('');playHit();
       setTimeout(nextWord,500);
     }else{
