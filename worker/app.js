@@ -6,6 +6,8 @@
   const saveSetting=(key,on)=>{try{localStorage.setItem(key,on?'on':'off')}catch{}};
   const state = {name:'',words:[],seen:[],current:null,kills:0,runId:null,active:false,battleReady:false,pending:false,deadline:0,tick:null,returnPanel:'intro',sound:readSetting('kb-sfx'),bgm:readSetting('kb-bgm')};
   const bgmAudio=$('#bgm');bgmAudio.volume=.36;
+  const hitAudio=$('#hitSound');hitAudio.volume=.78;
+  function playHit(){if(!state.sound)return;try{hitAudio.currentTime=0;hitAudio.play().catch(()=>{})}catch{}}
   function primeMusic(){if(!state.bgm)return;bgmAudio.muted=true;bgmAudio.play().catch(()=>{})}
   function startMusic(reset){if(!state.bgm)return;if(reset)try{bgmAudio.currentTime=0}catch{};bgmAudio.muted=false;bgmAudio.play().catch(()=>{})}
   function stopMusic(reset){bgmAudio.pause();bgmAudio.muted=false;if(reset)try{bgmAudio.currentTime=0}catch{}}
@@ -102,12 +104,14 @@
     const expected=state.current.english.trim().toLowerCase().replace(/\s+/g,' ');
     if(answer===expected){
       state.pending=true;state.kills++;$('#score').innerHTML=String(state.kills).padStart(2,'0')+'<span>匹</span>';
-      burst();$('#enemy').classList.add('shatter');toast('');play(780,.19);
+      burst();$('#enemy').classList.add('shatter');toast('');playHit();
       setTimeout(nextWord,500);
     }else{
       $('#enemy').classList.remove('wrong');void $('#enemy').offsetWidth;$('#enemy').classList.add('wrong');
-      toast('MISS — TRY AGAIN',true);play(190,.22,'square');$('#answerInput').select();
+      const game=$('#game');game.classList.remove('shake');void game.offsetWidth;game.classList.add('shake');
+      toast('');play(190,.22,'square');$('#answerInput').select();
       setTimeout(()=>$('#enemy').classList.remove('wrong'),420);
+      clearTimeout(game._shakeTimer);game._shakeTimer=setTimeout(()=>game.classList.remove('shake'),360);
     }
   });
   $('#startBtn').addEventListener('click',begin);
