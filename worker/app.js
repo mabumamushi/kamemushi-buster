@@ -2,7 +2,18 @@
   const $ = (s) => document.querySelector(s);
   const panels = ['intro','game','result','ranking','admin'];
   const bugMarkup = $('.hero-bug .bug').outerHTML;
-  const state = {name:'',words:[],seen:[],current:null,kills:0,runId:null,active:false,pending:false,deadline:0,tick:null,returnPanel:'intro',sound:true};
+  const readSetting=key=>{try{return localStorage.getItem(key)!=='off'}catch{return true}};
+  const saveSetting=(key,on)=>{try{localStorage.setItem(key,on?'on':'off')}catch{}};
+  const state = {name:'',words:[],seen:[],current:null,kills:0,runId:null,active:false,battleReady:false,pending:false,deadline:0,tick:null,returnPanel:'intro',sound:readSetting('kb-sfx'),bgm:readSetting('kb-bgm')};
+  const bgmAudio=$('#bgm');bgmAudio.volume=.36;
+  function primeMusic(){if(!state.bgm)return;bgmAudio.muted=true;bgmAudio.play().catch(()=>{})}
+  function startMusic(reset){if(!state.bgm)return;if(reset)try{bgmAudio.currentTime=0}catch{};bgmAudio.muted=false;bgmAudio.play().catch(()=>{})}
+  function stopMusic(reset){bgmAudio.pause();bgmAudio.muted=false;if(reset)try{bgmAudio.currentTime=0}catch{}}
+  function syncSoundControls(){
+    for(const [id,on] of [['sfxToggle',state.sound],['bgmToggle',state.bgm]]){const button=$('#'+id);button.setAttribute('aria-checked',String(on));button.querySelector('.switch-status').textContent=on?'ON':'OFF'}
+    $('#soundBtn').textContent=state.sound||state.bgm?'◖))':'◖';
+  }
+  syncSoundControls();
   function show(id){panels.forEach(p => $('#'+p).classList.toggle('active',p===id));window.scrollTo(0,0)}
   function toast(message,bad){const el=$('#feedback');el.textContent=message;el.classList.toggle('bad',!!bad);clearTimeout(el._t);el._t=setTimeout(()=>el.textContent='',700)}
   function play(freq,duration,type){if(!state.sound)return;try{const C=window.AudioContext||window.webkitAudioContext;const c=play.c||(play.c=new C());const o=c.createOscillator(),g=c.createGain();o.type=type||'sawtooth';o.frequency.setValueAtTime(freq,c.currentTime);o.frequency.exponentialRampToValueAtTime(Math.max(40,freq/3),c.currentTime+duration);g.gain.setValueAtTime(.055,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+duration);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+duration)}catch{}}
@@ -56,21 +67,28 @@
     const name=$('#playerName').value.trim();
     if(!name){$('#nameError').textContent='名前を入力してください';$('#playerName').focus();return}
     $('#nameError').textContent='';
-    state.name=name;state.kills=0;state.seen=[];state.runId=null;state.active=false;state.pending=false;
+    state.name=name;state.kills=0;state.seen=[];state.runId=null;state.active=false;state.battleReady=false;state.pending=false;
+    primeMusic();
     $('#hudName').textContent=name;$('#score').innerHTML='00<span>匹</span>';$('#timer').innerHTML='60<span>s</span>';$('#timeFill').style.width='100%';
     $('#enemy').innerHTML='';$('#answerInput').disabled=true;show('game');
     let words;
     try{const r=await fetch('/api/words');const data=await r.json();words=data.words}catch{}
-    if(!Array.isArray(words)||!words.length){toast('LOAD ERROR',true);setTimeout(()=>show('intro'),1300);return}
+    if(!Array.isArray(words)||!words.length){stopMusic(true);toast('LOAD ERROR',true);setTimeout(()=>show('intro'),1300);return}
     state.words=words;
-    for(const n of ['3','2','1','GO']){if(!$('#game').classList.contains('active'))return;$('#countdown').textContent=n;play(n==='GO'?900:400, .1,'sine');await new Promise(res=>setTimeout(res,n==='GO'?450:750))}
+    for(const n of ['3','2','1']){if(!$('#game').classList.contains('active')){stopMusic(true);return}$('#countdown').textContent=n;play(400,.1,'sine');await new Promise(res=>setTimeout(res,750))}
     $('#countdown').textContent='';
     try{const r=await fetch('/api/start',{method:'POST'});if(r.ok){const data=await r.json();state.runId=data.runId}}catch{}
-    state.active=true;$('#answerInput').disabled=false;state.deadline=performance.now()+60000;nextWord();state.tick=setInterval(updateHud,100);updateHud();
+    if(!$('#game').classList.contains('active')){stopMusic(true);return}
+    state.active=true;nextWord();
+    await new Promise(res=>setTimeout(res,850));
+    if(!$('#game').classList.contains('active')){state.active=false;stopMusic(true);return}
+    state.battleReady=true;startMusic(true);
+    $('#answerInput').disabled=false;$('#answerInput').focus();state.deadline=performance.now()+60000;state.tick=setInterval(updateHud,100);updateHud();
   }
   function finish(){
     if(!state.active)return;
-    state.active=false;state.pending=false;clearInterval(state.tick);
+    state.active=false;state.battleReady=false;state.pending=false;clearInterval(state.tick);
+    stopMusic(true);
     $('#answerInput').disabled=true;$('#countdown').textContent='';
     $('#finalScore').innerHTML=state.kills+'<span>匹</span>';$('#resultName').textContent=state.name;
     $('#personalRank').textContent='スコアを保存中…';
@@ -79,12 +97,12 @@
     fetch('/api/result',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)}).then(async r=>{const d=await r.json();if(!r.ok)throw Error(d.error||'保存できませんでした');$('#personalRank').textContent=d.rank?'GLOBAL RANK  #'+d.rank:'スコアを保存しました'}).catch(()=>{$('#personalRank').textContent='スコアを保存できませんでした'});
   }
   $('#answerForm').addEventListener('submit',e=>{
-    e.preventDefault();if(!state.active||state.pending||!state.current)return;
+    e.preventDefault();if(!state.active||!state.battleReady||state.pending||!state.current)return;
     const answer=$('#answerInput').value.trim().toLowerCase().replace(/\s+/g,' ');
     const expected=state.current.english.trim().toLowerCase().replace(/\s+/g,' ');
     if(answer===expected){
       state.pending=true;state.kills++;$('#score').innerHTML=String(state.kills).padStart(2,'0')+'<span>匹</span>';
-      burst();$('#enemy').classList.add('shatter');toast('TARGET ELIMINATED');play(780,.19);
+      burst();$('#enemy').classList.add('shatter');toast('');play(780,.19);
       setTimeout(nextWord,500);
     }else{
       $('#enemy').classList.remove('wrong');void $('#enemy').offsetWidth;$('#enemy').classList.add('wrong');
@@ -92,7 +110,7 @@
       setTimeout(()=>$('#enemy').classList.remove('wrong'),420);
     }
   });
-  $('#startBtn').addEventListener('click',begin);$('#playerName').addEventListener('keydown',e=>{if(e.key==='Enter')begin()});
+  $('#startBtn').addEventListener('click',begin);
   $('#replayBtn').addEventListener('click',()=>{show('intro');$('#playerName').focus()});
   $('#wordsBtn').addEventListener('click',()=>{
     const wrap=$('#wordList');wrap.classList.toggle('hidden');const rows=$('#wordRows');rows.replaceChildren();
@@ -106,13 +124,28 @@
     }catch{$('#rankingRows').textContent='読み込めませんでした'}
   }
   $('#rankBtn').addEventListener('click',ranking);
-  $('#adminBtn').addEventListener('click',()=>{state.returnPanel=$('.panel.active')?.id||'intro';show('admin');$('#adminKey').value=sessionStorage.getItem('kb-admin-key')||''});
+  let clearRankingArmed=false;
+  function resetClearRanking(){clearRankingArmed=false;$('#clearRankingBtn').textContent='ランキングを全件削除'}
+  $('#adminBtn').addEventListener('click',()=>{state.returnPanel=$('.panel.active')?.id||'intro';show('admin');$('#adminKey').value=sessionStorage.getItem('kb-admin-key')||'';resetClearRanking();$('#clearRankingStatus').textContent=''});
   document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>show(state.returnPanel)));
-  $('#soundBtn').addEventListener('click',()=>{state.sound=!state.sound;$('#soundBtn').textContent=state.sound?'◖))':'◖';$('#soundBtn').setAttribute('aria-label',state.sound?'効果音をオフ':'効果音をオン')});
+  $('#soundBtn').addEventListener('click',()=>{const menu=$('#soundMenu');menu.hidden=!menu.hidden;$('#soundBtn').setAttribute('aria-expanded',String(!menu.hidden))});
+  $('#sfxToggle').addEventListener('click',()=>{state.sound=!state.sound;saveSetting('kb-sfx',state.sound);syncSoundControls()});
+  $('#bgmToggle').addEventListener('click',()=>{state.bgm=!state.bgm;saveSetting('kb-bgm',state.bgm);if(state.bgm&&state.battleReady)startMusic(false);else if(state.bgm&&$('#game').classList.contains('active'))primeMusic();else if(!state.bgm)stopMusic(false);syncSoundControls()});
+  document.addEventListener('click',e=>{if(!e.target.closest('.sound-control')){$('#soundMenu').hidden=true;$('#soundBtn').setAttribute('aria-expanded','false')}});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('#soundMenu').hidden=true;$('#soundBtn').setAttribute('aria-expanded','false')}});
   $('#importBtn').addEventListener('click',async()=>{
     const file=$('#csvFile').files[0],key=$('#adminKey').value.trim(),status=$('#importStatus');
     if(!key||!file){status.textContent='管理者キーと CSV ファイルを指定してください';return}
     status.textContent='読み込み中…';sessionStorage.setItem('kb-admin-key',key);
     try{const csv=await file.text();const r=await fetch('/api/import',{method:'POST',headers:{'content-type':'text/csv;charset=utf-8','x-admin-key':key},body:csv});const d=await r.json();if(!r.ok)throw Error(d.error||'読み込み失敗');status.textContent=d.count+' 語を登録しました'}catch(e){status.textContent=e.message}
+  });
+  $('#clearRankingBtn').addEventListener('click',async()=>{
+    const key=$('#adminKey').value.trim(),status=$('#clearRankingStatus'),button=$('#clearRankingBtn');
+    if(!key){status.textContent='管理者キーを入力してください';return}
+    if(!clearRankingArmed){clearRankingArmed=true;button.textContent='もう一度押して全件削除';status.textContent='ランキングの全記録を削除します';return}
+    button.disabled=true;status.textContent='削除中…';sessionStorage.setItem('kb-admin-key',key);
+    try{const r=await fetch('/api/ranking',{method:'DELETE',headers:{'x-admin-key':key}});const d=await r.json();if(!r.ok)throw Error(d.error||'削除失敗');status.textContent=d.count+' 件を削除しました';resetClearRanking()}
+    catch(e){status.textContent=e.message;resetClearRanking()}
+    finally{button.disabled=false}
   });
 })();

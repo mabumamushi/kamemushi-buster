@@ -1,4 +1,4 @@
-import { page, style, app } from './assets.js';
+import { page, style, app, music } from './assets.js';
 
 const DEFAULT_WORDS = [['apple','りんご'],['future','未来'],['robot','ロボット'],['planet','惑星'],['energy','エネルギー'],['light','光'],['dream','夢'],['signal','信号'],['forest','森'],['water','水'],['star','星'],['space','宇宙'],['bridge','橋'],['music','音楽'],['flower','花'],['ocean','海'],['window','窓'],['cloud','雲'],['friend','友達'],['morning','朝'],['silver','銀色'],['garden','庭'],['camera','カメラ'],['rocket','ロケット']];
 const json = (data,status=200) => new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});
@@ -26,11 +26,34 @@ async function handle(request,env){
   if(request.method==='GET'&&path==='/')return new Response(page,{headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-cache'}});
   if(request.method==='GET'&&path==='/style.css')return new Response(style,{headers:{'content-type':'text/css; charset=utf-8','cache-control':'no-cache'}});
   if(request.method==='GET'&&path==='/app.js')return new Response(app,{headers:{'content-type':'application/javascript; charset=utf-8','cache-control':'no-cache'}});
+  if((request.method==='GET'||request.method==='HEAD')&&path==='/music/battle100.mp3'){
+    const bytes=music(),length=bytes.byteLength;
+    const headers={'content-type':'audio/mpeg','accept-ranges':'bytes','cache-control':'public, max-age=3600'};
+    const range=request.headers.get('range');
+    if(range){
+      const match=/^bytes=(\d*)-(\d*)$/.exec(range);
+      if(!match||(!match[1]&&!match[2]))return new Response(null,{status:416,headers:{...headers,'content-range':`bytes */${length}`}});
+      const start=match[1]?Number(match[1]):Math.max(0,length-Number(match[2]));
+      const end=match[1]?(match[2]?Math.min(Number(match[2]),length-1):length-1):length-1;
+      if(start>=length||end<start)return new Response(null,{status:416,headers:{...headers,'content-range':`bytes */${length}`}});
+      headers['content-range']=`bytes ${start}-${end}/${length}`;
+      headers['content-length']=String(end-start+1);
+      return new Response(request.method==='HEAD'?null:bytes.slice(start,end+1),{status:206,headers});
+    }
+    headers['content-length']=String(length);
+    return new Response(request.method==='HEAD'?null:bytes,{headers});
+  }
   if(request.method==='GET'&&path==='/api/words')return json({words:await words(env)});
   if(request.method==='GET'&&path==='/api/ranking'){
     if(!env.DB)return json({scores:[]});
     const res=await env.DB.prepare('SELECT name, kills FROM scores ORDER BY kills DESC, created_at ASC LIMIT 20').all();
     return json({scores:res.results||[]});
+  }
+  if(request.method==='DELETE'&&path==='/api/ranking'){
+    if(!env.ADMIN_KEY||request.headers.get('x-admin-key')!==env.ADMIN_KEY)return error('管理者キーが違います',403);
+    if(!env.DB)return error('データベースが利用できません',503);
+    const result=await env.DB.prepare('DELETE FROM scores').run();
+    return json({count:result.meta?.changes||0});
   }
   if(request.method==='POST'&&path==='/api/start'){
     if(!env.DB)return error('ランキングは現在利用できません',503);

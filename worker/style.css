@@ -12,7 +12,8 @@
 .bug-core{left:54px;top:111px;width:112px;height:63px;clip-path:polygon(50% 0,100% 12%,94% 72%,50% 100%,6% 72%,0 12%);background:#0c1d23de;border:2px solid var(--bug)}
 .bug-core span{font-size:20px;max-width:98px}
 .eye{top:56px;width:9px;height:9px}.e1{left:72px}.e2{right:72px}
-.antenna{top:-24px;width:5px;height:93px;background:linear-gradient(#cf8b4d 0 28%,var(--bug) 30% 100%);clip-path:polygon(0 0,100% 0,100% 100%,0 100%);z-index:0}
+.antenna{top:-24px;width:3px;height:93px;background:#b7dfa2;border-radius:2px;clip-path:none;z-index:0}
+.bug.brown .antenna{background:#d5b389}
 .a1{left:75px;transform:rotate(-27deg);transform-origin:bottom center}.a2{right:75px;transform:rotate(27deg);transform-origin:bottom center}
 .leg{width:65px;height:7px;background:var(--bug-dark);border-radius:3px;clip-path:none;z-index:-1}
 .leg:after{content:'';position:absolute;left:-23px;top:1px;width:28px;height:5px;background:linear-gradient(90deg,#d68d4e,var(--bug-dark));border-radius:3px;transform:rotate(-26deg);transform-origin:right center}
@@ -24,3 +25,14 @@
 .enemy .bug{width:220px;height:248px}
 .bug-core{left:45px;width:130px}.bug-core span{font-size:18px;max-width:118px}
 @media(max-width:650px){.arena{min-height:320px}.hero-bug .bug,.arena .bug{scale:.86}}
+.admin-divider{height:1px;background:#294650;margin:26px 0 22px}
+.secondary.danger{border-color:#8f4a53;color:#ffc5ca}
+.secondary.danger:hover{border-color:var(--red);background:#fb5b6317}
+.secondary.danger:disabled{opacity:.5;cursor:wait}
+.sound-control{position:relative}
+.sound-menu{position:absolute;right:0;top:calc(100% + 10px);z-index:40;width:184px;padding:7px;background:#0d1b25;border:1px solid #3e6068;border-radius:6px;box-shadow:0 18px 45px #0009}
+.sound-menu[hidden]{display:none}
+.sound-option{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;background:transparent;border:0;border-radius:4px;color:#d9eeea;text-align:left;font-size:13px}
+.sound-option:hover{background:#1a3038}
+.switch-status{font:500 11px 'DM Mono',monospace;color:var(--lime);letter-spacing:.1em}
+.sound-option[aria-checked="false"] .switch-status{color:#76919b}

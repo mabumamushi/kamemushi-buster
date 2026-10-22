@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#080e16">
   <title>カメムシバスター</title>
   <meta name="description" content="60秒で何匹倒せる？近未来タイピングゲーム">
-  <link rel="stylesheet" href="/style.css?v=2">
+  <link rel="stylesheet" href="/style.css?v=5">
 </head>
 <body>
   <div class="noise"></div>
@@ -15,31 +15,35 @@
       <a class="brand" href="/" aria-label="カメムシバスター ホーム"><span class="brand-mark">⌗</span><span>KAMEMUSHI <b>BUSTER</b></span></a>
       <nav>
         <button id="rankBtn" class="icon-btn" title="ランキング" aria-label="ランキング">♜</button>
-        <button id="soundBtn" class="icon-btn" title="効果音" aria-label="効果音">◖))</button>
+        <div class="sound-control">
+          <button id="soundBtn" class="icon-btn" type="button" title="音の設定" aria-label="音の設定" aria-expanded="false" aria-controls="soundMenu">◖))</button>
+          <div id="soundMenu" class="sound-menu" role="group" aria-label="音の設定" hidden>
+            <button id="sfxToggle" class="sound-option" type="button" role="switch" aria-checked="true"><span>効果音</span><span class="switch-status">ON</span></button>
+            <button id="bgmToggle" class="sound-option" type="button" role="switch" aria-checked="true"><span>BGM</span><span class="switch-status">ON</span></button>
+          </div>
+        </div>
         <button id="adminBtn" class="icon-btn" title="管理者" aria-label="管理者">⚙</button>
       </nav>
     </header>
     <main>
       <section id="intro" class="panel intro active">
-        <div class="eyebrow"><span class="live-dot"></span> TYPE TO ELIMINATE <span class="slash">/</span> 60 SEC MISSION</div>
+        <div class="eyebrow"><span class="live-dot"></span> 60 SEC MISSION</div>
         <h1>カメムシ<span>バスター</span></h1>
-        <p class="tagline">迫るターゲットを、タイピングで撃ち落とせ。</p>
+        <p class="tagline">みんなでカメムシ駆除</p>
         <div class="hero-bug" aria-hidden="true">
           <div class="target-rings"></div>
-          <div class="bug green"><div class="antenna a1"></div><div class="antenna a2"></div><div class="leg l1"></div><div class="leg l2"></div><div class="leg l3"></div><div class="leg l4"></div><div class="leg l5"></div><div class="leg l6"></div><div class="wing left"></div><div class="wing right"></div><div class="bug-core"><span>ターゲット</span></div><div class="eye e1"></div><div class="eye e2"></div></div>
+          <div class="bug green"><div class="antenna a1"></div><div class="antenna a2"></div><div class="leg l1"></div><div class="leg l2"></div><div class="leg l3"></div><div class="leg l4"></div><div class="leg l5"></div><div class="leg l6"></div><div class="wing left"></div><div class="wing right"></div><div class="bug-core"><span>ENEMY</span></div><div class="eye e1"></div><div class="eye e2"></div></div>
         </div>
         <div class="join">
-          <label for="playerName">PLAYER NAME</label>
-          <div class="join-row"><input id="playerName" maxlength="20" autocomplete="nickname" placeholder="名前を入力"><button id="startBtn" class="primary">START <span>↗</span></button></div>
+          <label for="playerName">NAME</label>
+          <div class="join-row"><input id="playerName" maxlength="20" autocomplete="nickname" placeholder="NAME"><button id="startBtn" class="primary">START <span>↗</span></button></div>
           <p id="nameError" class="error" role="alert"></p>
         </div>
-        <div class="intro-foot"><span>01 / 日本語を読む</span><span>02 / 英語を入力</span><span>03 / ENTER で攻撃</span></div>
       </section>
       <section id="game" class="panel game" aria-label="ゲーム">
         <div class="hud"><div><small>PLAYER</small><strong id="hudName">---</strong></div><div class="timer-wrap"><small>TIME LEFT</small><strong id="timer">60<span>s</span></strong><div class="time-track"><div id="timeFill"></div></div></div><div><small>ELIMINATED</small><strong id="score">00<span>匹</span></strong></div></div>
         <div class="arena" id="arena"><div class="arena-grid"></div><div class="scanline"></div><div class="target-cross c1">+</div><div class="target-cross c2">+</div><div id="enemy" class="enemy"></div><div id="particles"></div><div id="countdown" class="countdown"></div><div id="feedback" class="feedback"></div></div>
         <form id="answerForm" class="answer-bar"><span class="answer-icon">⌘</span><input id="answerInput" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="英語を入力" placeholder="英語を入力して Enter"><button type="submit" aria-label="攻撃">↵ <span>ATTACK</span></button></form>
-        <div class="game-tip">日本語を英語に変換して攻撃　<span>ENTER ↵</span></div>
       </section>
       <section id="result" class="panel result">
         <div class="eyebrow"><span class="live-dot"></span> MISSION COMPLETE</div><div class="result-label">ELIMINATED</div><div id="finalScore" class="final-score">0<span>匹</span></div><div id="resultName" class="result-name"></div>
@@ -48,16 +52,19 @@
         <div id="wordList" class="word-list hidden"><h2>WORD LOG <span>／ 単語一覧</span></h2><div id="wordRows"></div></div>
       </section>
       <section id="ranking" class="panel overlay-panel"><div class="section-head"><div><div class="eyebrow">GLOBAL RECORDS</div><h2>ランキング</h2></div><button class="close-btn" data-close aria-label="閉じる">×</button></div><div id="rankingRows" class="rank-rows"></div></section>
-      <section id="admin" class="panel overlay-panel"><div class="section-head"><div><div class="eyebrow">CONTROL ROOM</div><h2>単語を登録</h2></div><button class="close-btn" data-close aria-label="閉じる">×</button></div>
+      <section id="admin" class="panel overlay-panel"><div class="section-head"><div><div class="eyebrow">CONTROL ROOM</div><h2>管理者</h2></div><button class="close-btn" data-close aria-label="閉じる">×</button></div>
         <p class="admin-guide">スプレッドシートの A列に英語、B列に日本語を入力。1行目は見出し、2行目以降を読み込みます。Google スプレッドシートや Excel から CSV で保存してください。</p>
         <label class="field-label" for="adminKey">ADMIN KEY</label><input id="adminKey" type="password" placeholder="管理者キー" autocomplete="off">
         <label class="field-label" for="csvFile">CSV FILE</label><input id="csvFile" type="file" accept=".csv,text/csv">
         <button id="importBtn" class="primary">読み込む　↗</button><div id="importStatus" class="admin-status" role="status"></div>
-        <p class="admin-small">形式例: <code>English,Japanese<br>apple,りんご<br>future,未来</code></p>
+        <div class="admin-divider"></div>
+        <button id="clearRankingBtn" type="button" class="secondary danger">ランキングを全件削除</button>
+        <div id="clearRankingStatus" class="admin-status" role="status"></div>
       </section>
     </main>
-    <footer><span>© KAMEMUSHI BUSTER</span><span>TYPE. STRIKE. REPEAT.</span></footer>
+    <footer><span>© KAMEMUSHI BUSTER</span></footer>
   </div>
-  <script src="/app.js?v=2" defer></script>
+  <audio id="bgm" src="/music/battle100.mp3?v=1" preload="none" loop></audio>
+  <script src="/app.js?v=5" defer></script>
 </body>
 </html>

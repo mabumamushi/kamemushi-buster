@@ -15,6 +15,8 @@ encode() { base64 < "$1" | tr -d '\n'; }
   printf 'export const page = decode("%s");\n' "$(encode "$project_root/worker/page.html")"
   printf 'export const style = decode("%s");\n' "$(encode "$project_root/worker/style.css")"
   printf 'export const app = decode("%s");\n' "$(encode "$project_root/worker/app.js")"
+  printf 'const musicBase64 = "%s";\n' "$(encode "$project_root/worker/music/battle100.mp3")"
+  printf 'let musicBytes; export const music = () => musicBytes ??= Uint8Array.from(atob(musicBase64), c => c.charCodeAt(0));\n'
 } > "$dist_root/server/assets.js"
 
 echo "Built $dist_root"
