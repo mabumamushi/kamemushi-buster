@@ -1,4 +1,4 @@
-import { page, style, app, music, hit } from './assets.js';
+import { page, style, app, font, music, hit } from './assets.js';
 
 const DEFAULT_WORDS = [['apple','りんご'],['future','未来'],['robot','ロボット'],['planet','惑星'],['energy','エネルギー'],['light','光'],['dream','夢'],['signal','信号'],['forest','森'],['water','水'],['star','星'],['space','宇宙'],['bridge','橋'],['music','音楽'],['flower','花'],['ocean','海'],['window','窓'],['cloud','雲'],['friend','友達'],['morning','朝'],['silver','銀色'],['garden','庭'],['camera','カメラ'],['rocket','ロケット']];
 const json = (data,status=200) => new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});
@@ -26,6 +26,10 @@ async function handle(request,env){
   if(request.method==='GET'&&path==='/')return new Response(page,{headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-cache'}});
   if(request.method==='GET'&&path==='/style.css')return new Response(style,{headers:{'content-type':'text/css; charset=utf-8','cache-control':'no-cache'}});
   if(request.method==='GET'&&path==='/app.js')return new Response(app,{headers:{'content-type':'application/javascript; charset=utf-8','cache-control':'no-cache'}});
+  if((request.method==='GET'||request.method==='HEAD')&&path==='/fonts/Makinas-4-Flat.otf'){
+    const bytes=font();
+    return new Response(request.method==='HEAD'?null:bytes,{headers:{'content-type':'font/otf','content-length':String(bytes.byteLength),'cache-control':'public, max-age=31536000, immutable'}});
+  }
   if((request.method==='GET'||request.method==='HEAD')&&(path==='/music/battle100.mp3'||path==='/music/hit.mp3')){
     const bytes=(path==='/music/hit.mp3'?hit:music)(),length=bytes.byteLength;
     const headers={'content-type':'audio/mpeg','accept-ranges':'bytes','cache-control':'public, max-age=3600'};
