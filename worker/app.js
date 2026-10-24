@@ -4,7 +4,7 @@
   const bugMarkup = $('.hero-bug .bug').outerHTML;
   const readSetting=key=>{try{return localStorage.getItem(key)!=='off'}catch{return true}};
   const saveSetting=(key,on)=>{try{localStorage.setItem(key,on?'on':'off')}catch{}};
-  const state = {name:'',words:[],seen:[],current:null,kills:0,runId:null,active:false,battleReady:false,pending:false,deadline:0,tick:null,returnPanel:'intro',sound:readSetting('kb-sfx'),bgm:readSetting('kb-bgm')};
+  const state = {name:'',level:3,words:[],seen:[],current:null,kills:0,runId:null,active:false,battleReady:false,pending:false,loading:false,deadline:0,tick:null,returnPanel:'intro',sound:readSetting('kb-sfx'),bgm:readSetting('kb-bgm')};
   const bgmAudio=$('#bgm');bgmAudio.volume=.36;
   const hitAudio=$('#hitSound');hitAudio.volume=.78;
   function playHit(){if(!state.sound)return;try{hitAudio.currentTime=0;hitAudio.play().catch(()=>{})}catch{}}
@@ -66,20 +66,27 @@
     if(left<=0)finish();
   }
   async function begin(){
+    if(state.loading)return;
     const name=$('#playerName').value.trim();
     if(!name){$('#nameError').textContent='名前を入力してください';$('#playerName').focus();return}
     $('#nameError').textContent='';
-    state.name=name;state.kills=0;state.seen=[];state.runId=null;state.active=false;state.battleReady=false;state.pending=false;
+    const level=Number($('#playerLevel').value);
+    state.loading=true;$('#startBtn').disabled=true;
+    let words;
+    try{
+      const r=await fetch('/api/words?level='+level),data=await r.json();
+      if(!r.ok)throw Error(data.error||'問題を読み込めませんでした');
+      words=data.words;
+      if(!Array.isArray(words)||!words.length)throw Error('Level '+level+' の問題は未登録です');
+    }catch(e){$('#nameError').textContent=e.message||'問題を読み込めませんでした';return}
+    finally{state.loading=false;$('#startBtn').disabled=false}
+    state.name=name;state.level=level;state.words=words;state.kills=0;state.seen=[];state.runId=null;state.active=false;state.battleReady=false;state.pending=false;
     primeMusic();
     $('#hudName').textContent=name;$('#score').innerHTML='0<span>匹</span>';$('#timer').innerHTML='60<span>s</span>';$('#timeFill').style.width='100%';
     $('#enemy').innerHTML='';$('#answerInput').disabled=true;show('game');
-    let words;
-    try{const r=await fetch('/api/words');const data=await r.json();words=data.words}catch{}
-    if(!Array.isArray(words)||!words.length){stopMusic(true);toast('LOAD ERROR',true);setTimeout(()=>show('intro'),1300);return}
-    state.words=words;
     for(const n of ['3','2','1']){if(!$('#game').classList.contains('active')){stopMusic(true);return}$('#countdown').textContent=n;play(400,.1,'sine');await new Promise(res=>setTimeout(res,750))}
     $('#countdown').textContent='';
-    try{const r=await fetch('/api/start',{method:'POST'});if(r.ok){const data=await r.json();state.runId=data.runId}}catch{}
+    try{const r=await fetch('/api/start',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({level})});if(r.ok){const data=await r.json();state.runId=data.runId}}catch{}
     if(!$('#game').classList.contains('active')){stopMusic(true);return}
     state.active=true;nextWord();
     await new Promise(res=>setTimeout(res,850));
@@ -96,7 +103,7 @@
     $('#personalRank').textContent='スコアを保存中…';
     $('#wordList').classList.add('hidden');show('result');play(580,.4,'triangle');
     const payload={runId:state.runId,name:state.name,kills:state.kills};
-    fetch('/api/result',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)}).then(async r=>{const d=await r.json();if(!r.ok)throw Error(d.error||'保存できませんでした');$('#personalRank').textContent=d.rank?'GLOBAL RANK  #'+d.rank:'スコアを保存しました'}).catch(()=>{$('#personalRank').textContent='スコアを保存できませんでした'});
+    fetch('/api/result',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)}).then(async r=>{const d=await r.json();if(!r.ok)throw Error(d.error||'保存できませんでした');$('#personalRank').textContent=d.rank?'LEVEL '+state.level+' RANK  #'+d.rank:'スコアを保存しました'}).catch(()=>{$('#personalRank').textContent='スコアを保存できませんでした'});
   }
   $('#answerForm').addEventListener('submit',e=>{
     e.preventDefault();if(!state.active||!state.battleReady||state.pending||!state.current)return;
@@ -120,14 +127,17 @@
     const wrap=$('#wordList');wrap.classList.toggle('hidden');const rows=$('#wordRows');rows.replaceChildren();
     state.words.forEach(w=>{const row=document.createElement('div');row.className='word-row';const a=document.createElement('span'),b=document.createElement('span');a.textContent=w.japanese;b.textContent=w.english;row.append(a,b);rows.append(row)});
   });
-  async function ranking(){
-    state.returnPanel=$('.panel.active')?.id||'intro';show('ranking');$('#rankingRows').textContent='読み込み中…';
-    try{const r=await fetch('/api/ranking');const data=await r.json();const wrap=$('#rankingRows');wrap.replaceChildren();
+  async function loadRanking(){
+    const level=$('#rankingLevel').value;
+    $('#rankingRows').textContent='読み込み中…';
+    try{const r=await fetch('/api/ranking?level='+level);const data=await r.json();if(!r.ok)throw Error(data.error||'読み込めませんでした');if($('#rankingLevel').value!==level)return;const wrap=$('#rankingRows');wrap.replaceChildren();
       if(!data.scores.length){wrap.textContent='まだ記録がありません';return}
       data.scores.forEach((s,i)=>{const row=document.createElement('div');row.className='rank-row';const n=document.createElement('span'),name=document.createElement('strong'),kills=document.createElement('span');n.className='num';n.textContent=String(i+1).padStart(2,'0');name.textContent=s.name;kills.className='kills';kills.textContent=s.kills+'匹';row.append(n,name,kills);wrap.append(row)});
     }catch{$('#rankingRows').textContent='読み込めませんでした'}
   }
+  function ranking(){state.returnPanel=$('.panel.active')?.id||'intro';$('#rankingLevel').value=$('#playerLevel').value;show('ranking');loadRanking()}
   $('#rankBtn').addEventListener('click',ranking);
+  $('#rankingLevel').addEventListener('change',loadRanking);
   let clearRankingArmed=false;
   function resetClearRanking(){clearRankingArmed=false;$('#clearRankingBtn').textContent='ランキングを全件削除'}
   $('#adminBtn').addEventListener('click',()=>{state.returnPanel=$('.panel.active')?.id||'intro';show('admin');$('#adminKey').value=sessionStorage.getItem('kb-admin-key')||'';resetClearRanking();$('#clearRankingStatus').textContent=''});
@@ -138,10 +148,10 @@
   document.addEventListener('click',e=>{if(!e.target.closest('.sound-control')){$('#soundMenu').hidden=true;$('#soundBtn').setAttribute('aria-expanded','false')}});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('#soundMenu').hidden=true;$('#soundBtn').setAttribute('aria-expanded','false')}});
   $('#importBtn').addEventListener('click',async()=>{
-    const file=$('#csvFile').files[0],key=$('#adminKey').value.trim(),status=$('#importStatus');
+    const file=$('#csvFile').files[0],key=$('#adminKey').value.trim(),level=$('#csvLevel').value,status=$('#importStatus');
     if(!key||!file){status.textContent='管理者キーと CSV ファイルを指定してください';return}
     status.textContent='読み込み中…';sessionStorage.setItem('kb-admin-key',key);
-    try{const csv=await file.text();const r=await fetch('/api/import',{method:'POST',headers:{'content-type':'text/csv;charset=utf-8','x-admin-key':key},body:csv});const d=await r.json();if(!r.ok)throw Error(d.error||'読み込み失敗');status.textContent=d.count+' 語を登録しました'}catch(e){status.textContent=e.message}
+    try{const csv=await file.text();const r=await fetch('/api/import?level='+level,{method:'POST',headers:{'content-type':'text/csv;charset=utf-8','x-admin-key':key},body:csv});const d=await r.json();if(!r.ok)throw Error(d.error||'読み込み失敗');status.textContent='Level '+level+' に '+d.count+' 語を登録しました'}catch(e){status.textContent=e.message}
   });
   $('#clearRankingBtn').addEventListener('click',async()=>{
     const key=$('#adminKey').value.trim(),status=$('#clearRankingStatus'),button=$('#clearRankingBtn');

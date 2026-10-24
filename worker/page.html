@@ -7,7 +7,7 @@
   <title>カメムシバスター</title>
   <meta name="description" content="60秒で何匹倒せる？近未来タイピングゲーム">
   <link rel="preload" href="/fonts/Makinas-4-Flat.otf" as="font" type="font/otf" crossorigin>
-  <link rel="stylesheet" href="/style.css?v=8">
+  <link rel="stylesheet" href="/style.css?v=9">
 </head>
 <body>
   <div class="noise"></div>
@@ -37,7 +37,7 @@
         </div>
         <div class="join">
           <label for="playerName">NAME</label>
-          <div class="join-row"><input id="playerName" maxlength="20" autocomplete="nickname" placeholder="NAME"><button id="startBtn" class="primary">START <span>↗</span></button></div>
+          <div class="join-row"><div class="join-fields"><select id="playerLevel" aria-label="レベル"><option value="1">Level 1</option><option value="2">Level 2</option><option value="3" selected>Level 3</option></select><input id="playerName" maxlength="20" autocomplete="nickname" placeholder="NAME"></div><button id="startBtn" class="primary">START <span>↗</span></button></div>
           <p id="nameError" class="error" role="alert"></p>
         </div>
       </section>
@@ -52,11 +52,11 @@
         <div class="result-actions"><button id="replayBtn" class="primary">↻　Replay</button><button id="wordsBtn" class="secondary">単語一覧　↗</button></div>
         <div id="wordList" class="word-list hidden"><h2>WORD LOG <span>／ 単語一覧</span></h2><div id="wordRows"></div></div>
       </section>
-      <section id="ranking" class="panel overlay-panel"><div class="section-head"><div><div class="eyebrow">GLOBAL RECORDS</div><h2>ランキング</h2></div><button class="close-btn" data-close aria-label="閉じる">×</button></div><div id="rankingRows" class="rank-rows"></div></section>
+      <section id="ranking" class="panel overlay-panel"><div class="section-head"><div><div class="eyebrow">GLOBAL RECORDS</div><h2>ランキング</h2></div><div class="rank-controls"><select id="rankingLevel" aria-label="ランキングのレベル"><option value="1">Level 1</option><option value="2">Level 2</option><option value="3" selected>Level 3</option></select><button class="close-btn" data-close aria-label="閉じる">×</button></div></div><div id="rankingRows" class="rank-rows"></div></section>
       <section id="admin" class="panel overlay-panel"><div class="section-head"><div><div class="eyebrow">CONTROL ROOM</div><h2>管理者</h2></div><button class="close-btn" data-close aria-label="閉じる">×</button></div>
-        <p class="admin-guide">スプレッドシートの A列に英語、B列に日本語を入力。1行目は見出し、2行目以降を読み込みます。Google スプレッドシートや Excel から CSV で保存してください。</p>
+        <p class="admin-guide">スプレッドシートの A列に英語、B列に日本語を入力。1行目は見出し、2行目以降を読み込みます。Google スプレッドシートや Excel から CSV で保存してください。選択したレベルの問題のみ入れ替わります。</p>
         <label class="field-label" for="adminKey">ADMIN KEY</label><input id="adminKey" type="password" placeholder="管理者キー" autocomplete="off">
-        <label class="field-label" for="csvFile">CSV FILE</label><input id="csvFile" type="file" accept=".csv,text/csv">
+        <label class="field-label" for="csvFile">CSV FILE</label><div class="csv-row"><select id="csvLevel" aria-label="CSV のレベル"><option value="1">Level 1</option><option value="2">Level 2</option><option value="3" selected>Level 3</option></select><input id="csvFile" type="file" accept=".csv,text/csv"></div>
         <button id="importBtn" class="primary">読み込む　↗</button><div id="importStatus" class="admin-status" role="status"></div>
         <div class="admin-divider"></div>
         <button id="clearRankingBtn" type="button" class="secondary danger">ランキングを全件削除</button>
@@ -67,6 +67,6 @@
   </div>
   <audio id="bgm" src="/music/battle100.mp3?v=1" preload="none" loop></audio>
   <audio id="hitSound" src="/music/hit.mp3?v=1" preload="auto"></audio>
-  <script src="/app.js?v=7" defer></script>
+  <script src="/app.js?v=9" defer></script>
 </body>
 </html>
