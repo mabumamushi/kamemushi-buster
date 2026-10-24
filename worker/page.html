@@ -7,7 +7,7 @@
   <title>カメムシバスター</title>
   <meta name="description" content="60秒で何匹倒せる？近未来タイピングゲーム">
   <link rel="preload" href="/fonts/Makinas-4-Flat.otf" as="font" type="font/otf" crossorigin>
-  <link rel="stylesheet" href="/style.css?v=9">
+  <link rel="stylesheet" href="/style.css?v=10">
 </head>
 <body>
   <div class="noise"></div>
@@ -56,8 +56,8 @@
       <section id="admin" class="panel overlay-panel"><div class="section-head"><div><div class="eyebrow">CONTROL ROOM</div><h2>管理者</h2></div><button class="close-btn" data-close aria-label="閉じる">×</button></div>
         <p class="admin-guide">スプレッドシートの A列に英語、B列に日本語を入力。1行目は見出し、2行目以降を読み込みます。Google スプレッドシートや Excel から CSV で保存してください。選択したレベルの問題のみ入れ替わります。</p>
         <label class="field-label" for="adminKey">ADMIN KEY</label><input id="adminKey" type="password" placeholder="管理者キー" autocomplete="off">
-        <label class="field-label" for="csvFile">CSV FILE</label><div class="csv-row"><select id="csvLevel" aria-label="CSV のレベル"><option value="1">Level 1</option><option value="2">Level 2</option><option value="3" selected>Level 3</option></select><input id="csvFile" type="file" accept=".csv,text/csv"></div>
-        <button id="importBtn" class="primary">読み込む　↗</button><div id="importStatus" class="admin-status" role="status"></div>
+        <label class="field-label" for="csvFile">CSV FILE</label><div class="csv-row"><select id="csvLevel" aria-label="CSV のレベル"><option value="1">Level 1</option><option value="2">Level 2</option><option value="3" selected>Level 3</option></select><input id="csvFile" type="file" accept=".csv,text/csv"><button id="importBtn" class="primary">読み込む　↗</button></div>
+        <div id="importStatus" class="admin-status" role="status"></div>
         <div class="admin-divider"></div>
         <button id="clearRankingBtn" type="button" class="secondary danger">ランキングを全件削除</button>
         <div id="clearRankingStatus" class="admin-status" role="status"></div>

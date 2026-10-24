@@ -46,8 +46,11 @@
 .join-fields select:focus-visible,.csv-row select:focus-visible,.rank-controls select:focus-visible{outline:2px solid var(--lime);outline-offset:3px}
 .csv-row{display:flex;gap:8px;align-items:stretch}
 .csv-row select{flex:none;width:132px}
-#admin .csv-row input{flex:1;width:auto;min-width:0}
+#admin .csv-row input{flex:1 1 0;width:auto;min-width:0}
+.csv-row #importBtn{flex:none;margin:0;padding:12px 18px}
 .rank-controls{display:flex;align-items:center;gap:10px}
 .rank-controls select{width:120px}
 .primary:disabled{opacity:.6;cursor:wait}
 @media(max-width:650px){.join-fields{width:100%}.join-fields select{width:112px}.section-head{gap:12px;flex-wrap:wrap}.rank-controls select{width:110px}.csv-row{flex-wrap:wrap}.csv-row select{width:120px}#admin .csv-row input{flex-basis:160px}}
+@media(max-width:650px){.csv-row{flex-wrap:nowrap;gap:6px}.csv-row select{flex:0 0 92px;width:92px;padding:10px 6px}#admin .csv-row input{flex:1 1 0;padding:10px 4px;font-size:11px}.csv-row #importBtn{padding:10px 8px;font-size:12px;letter-spacing:0}}
+@media(max-width:380px){.shell{padding:0 12px}.overlay-panel{padding:12px}.csv-row select{flex-basis:82px;width:82px;font-size:11px}.csv-row #importBtn{padding:10px 6px;font-size:11px}}
