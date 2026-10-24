@@ -41,13 +41,16 @@
 @media(prefers-reduced-motion:reduce){#game.shake{animation:none}}
 .join-fields{display:flex;align-items:stretch;gap:8px;flex:1;min-width:0}
 .join-fields input{width:100%;min-width:0}
-.join-fields select,.csv-row select,.rank-controls select{appearance:auto;background:#101d28;border:1px solid #33505c;border-radius:4px;color:#effcf4;font:inherit;padding:13px 10px;cursor:pointer}
+.join-fields select,.csv-row select,.rank-controls select,.delete-row select{appearance:auto;background:#101d28;border:1px solid #33505c;border-radius:4px;color:#effcf4;font:inherit;padding:13px 10px;cursor:pointer}
 .join-fields select{flex:none;width:118px}
-.join-fields select:focus-visible,.csv-row select:focus-visible,.rank-controls select:focus-visible{outline:2px solid var(--lime);outline-offset:3px}
+.join-fields select:focus-visible,.csv-row select:focus-visible,.rank-controls select:focus-visible,.delete-row select:focus-visible{outline:2px solid var(--lime);outline-offset:3px}
 .csv-row{display:flex;gap:8px;align-items:stretch}
 .csv-row select{flex:none;width:132px}
 #admin .csv-row input{flex:1 1 0;width:auto;min-width:0}
 .csv-row #importBtn{flex:none;margin:0;padding:12px 18px}
+.delete-row{display:flex;align-items:stretch;gap:8px}
+.delete-row select{flex:none;width:132px}
+.delete-row .danger{min-height:50px}
 .rank-controls{display:flex;align-items:center;gap:10px}
 .rank-controls select{width:120px}
 .primary:disabled{opacity:.6;cursor:wait}

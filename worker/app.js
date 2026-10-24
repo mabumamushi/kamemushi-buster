@@ -138,8 +138,9 @@
   function ranking(){state.returnPanel=$('.panel.active')?.id||'intro';$('#rankingLevel').value=$('#playerLevel').value;show('ranking');loadRanking()}
   $('#rankBtn').addEventListener('click',ranking);
   $('#rankingLevel').addEventListener('change',loadRanking);
-  let clearRankingArmed=false;
-  function resetClearRanking(){clearRankingArmed=false;$('#clearRankingBtn').textContent='ランキングを全件削除'}
+  let clearRankingArmedLevel=null;
+  function resetClearRanking(){clearRankingArmedLevel=null;$('#clearRankingBtn').textContent='Level '+$('#clearRankingLevel').value+' を削除'}
+  $('#clearRankingLevel').addEventListener('change',()=>{resetClearRanking();$('#clearRankingStatus').textContent='' });
   $('#adminBtn').addEventListener('click',()=>{state.returnPanel=$('.panel.active')?.id||'intro';show('admin');$('#adminKey').value=sessionStorage.getItem('kb-admin-key')||'';resetClearRanking();$('#clearRankingStatus').textContent=''});
   document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>show(state.returnPanel)));
   $('#soundBtn').addEventListener('click',()=>{const menu=$('#soundMenu');menu.hidden=!menu.hidden;$('#soundBtn').setAttribute('aria-expanded',String(!menu.hidden))});
@@ -154,11 +155,11 @@
     try{const csv=await file.text();const r=await fetch('/api/import?level='+level,{method:'POST',headers:{'content-type':'text/csv;charset=utf-8','x-admin-key':key},body:csv});const d=await r.json();if(!r.ok)throw Error(d.error||'読み込み失敗');status.textContent='Level '+level+' に '+d.count+' 語を登録しました'}catch(e){status.textContent=e.message}
   });
   $('#clearRankingBtn').addEventListener('click',async()=>{
-    const key=$('#adminKey').value.trim(),status=$('#clearRankingStatus'),button=$('#clearRankingBtn');
+    const key=$('#adminKey').value.trim(),level=$('#clearRankingLevel').value,status=$('#clearRankingStatus'),button=$('#clearRankingBtn');
     if(!key){status.textContent='管理者キーを入力してください';return}
-    if(!clearRankingArmed){clearRankingArmed=true;button.textContent='もう一度押して全件削除';status.textContent='ランキングの全記録を削除します';return}
+    if(clearRankingArmedLevel!==level){clearRankingArmedLevel=level;button.textContent='もう一度押して Level '+level+' を削除';status.textContent='Level '+level+' のランキング記録を削除します';return}
     button.disabled=true;status.textContent='削除中…';sessionStorage.setItem('kb-admin-key',key);
-    try{const r=await fetch('/api/ranking',{method:'DELETE',headers:{'x-admin-key':key}});const d=await r.json();if(!r.ok)throw Error(d.error||'削除失敗');status.textContent=d.count+' 件を削除しました';resetClearRanking()}
+    try{const r=await fetch('/api/ranking?level='+level,{method:'DELETE',headers:{'x-admin-key':key}});const d=await r.json();if(!r.ok)throw Error(d.error||'削除失敗');status.textContent='Level '+level+' の '+d.count+' 件を削除しました';resetClearRanking()}
     catch(e){status.textContent=e.message;resetClearRanking()}
     finally{button.disabled=false}
   });

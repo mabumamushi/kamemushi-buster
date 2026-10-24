@@ -63,8 +63,12 @@ async function handle(request,env){
   if(request.method==='DELETE'&&path==='/api/ranking'){
     if(!env.ADMIN_KEY||request.headers.get('x-admin-key')!==env.ADMIN_KEY)return error('管理者キーが違います',403);
     if(!env.DB)return error('データベースが利用できません',503);
-    const result=await env.DB.prepare('DELETE FROM scores').run();
-    return json({count:result.meta?.changes||0});
+    const levelParam=url.searchParams.get('level');
+    if(levelParam===null)return error('削除するレベルを指定してください');
+    const level=levelFrom(levelParam);
+    if(!level)return error('レベルを選択してください');
+    const result=await env.DB.prepare('DELETE FROM scores WHERE level = ?').bind(level).run();
+    return json({count:result.meta?.changes||0,level});
   }
   if(request.method==='POST'&&path==='/api/start'){
     if(!env.DB)return error('ランキングは現在利用できません',503);

@@ -7,7 +7,7 @@
   <title>カメムシバスター</title>
   <meta name="description" content="60秒で何匹倒せる？近未来タイピングゲーム">
   <link rel="preload" href="/fonts/Makinas-4-Flat.otf" as="font" type="font/otf" crossorigin>
-  <link rel="stylesheet" href="/style.css?v=10">
+  <link rel="stylesheet" href="/style.css?v=11">
 </head>
 <body>
   <div class="noise"></div>
@@ -59,7 +59,8 @@
         <label class="field-label" for="csvFile">CSV FILE</label><div class="csv-row"><select id="csvLevel" aria-label="CSV のレベル"><option value="1">Level 1</option><option value="2">Level 2</option><option value="3" selected>Level 3</option></select><input id="csvFile" type="file" accept=".csv,text/csv"><button id="importBtn" class="primary">読み込む　↗</button></div>
         <div id="importStatus" class="admin-status" role="status"></div>
         <div class="admin-divider"></div>
-        <button id="clearRankingBtn" type="button" class="secondary danger">ランキングを全件削除</button>
+        <label class="field-label" for="clearRankingLevel">RANKING LEVEL</label>
+        <div class="delete-row"><select id="clearRankingLevel" aria-label="削除するランキングのレベル"><option value="1">Level 1</option><option value="2">Level 2</option><option value="3" selected>Level 3</option></select><button id="clearRankingBtn" type="button" class="secondary danger">Level 3 を削除</button></div>
         <div id="clearRankingStatus" class="admin-status" role="status"></div>
       </section>
     </main>
@@ -67,6 +68,6 @@
   </div>
   <audio id="bgm" src="/music/battle100.mp3?v=1" preload="none" loop></audio>
   <audio id="hitSound" src="/music/hit.mp3?v=1" preload="auto"></audio>
-  <script src="/app.js?v=9" defer></script>
+  <script src="/app.js?v=11" defer></script>
 </body>
 </html>
